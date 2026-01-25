@@ -11,4 +11,8 @@ public interface PartRepository extends JpaRepository<Part, Long> {
     List<Part> findAllByCategory(String category);
 
     List<Part> findAllByPromptIsNotNull();
+
+    List<Part> findAllByTypeAndIsPublicTrueOrderByUpdatedAtDesc(com.motioncad.server.domain.PartType type);
+
+    List<Part> findAllByTypeAndIsPublicTrueOrderByLikesCountDesc(com.motioncad.server.domain.PartType type);
 }

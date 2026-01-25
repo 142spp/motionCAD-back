@@ -2,8 +2,13 @@ package com.motioncad.server.service;
 
 import com.motioncad.server.domain.Part;
 import com.motioncad.server.domain.User;
+import com.motioncad.server.domain.PartType;
+import com.motioncad.server.dto.PartResponseDTO;
 import com.motioncad.server.repository.PartRepository;
 import com.motioncad.server.repository.UserRepository;
+
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,5 +36,25 @@ public class PartService {
                 .build();
 
         return partRepository.save(part).getId();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PartResponseDTO> getPartsByType(PartType type, String sortBy) {
+        List<Part> parts;
+        if ("likes".equalsIgnoreCase(sortBy)) {
+            parts = partRepository.findAllByTypeAndIsPublicTrueOrderByLikesCountDesc(type);
+        } else {
+            parts = partRepository.findAllByTypeAndIsPublicTrueOrderByUpdatedAtDesc(type);
+        }
+        return parts.stream()
+                .map(PartResponseDTO::from)
+                .toList();
+    }
+
+    @Transactional
+    public void addLike(Long partId) {
+        Part part = partRepository.findById(partId)
+                .orElseThrow(() -> new RuntimeException("Part not found: " + partId));
+        part.setLikesCount(part.getLikesCount() + 1);
     }
 }

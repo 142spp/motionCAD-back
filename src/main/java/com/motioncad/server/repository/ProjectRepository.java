@@ -11,4 +11,8 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     List<Project> findAllByOrderByCreatedAtDesc();
 
     List<Project> findAllByUserId(Long userId);
+
+    List<Project> findAllByIsPublicTrueOrderByUpdatedAtDesc();
+
+    List<Project> findAllByIsPublicTrueOrderByLikesCountDesc();
 }

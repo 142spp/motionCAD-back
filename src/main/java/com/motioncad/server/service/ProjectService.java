@@ -90,6 +90,19 @@ public class ProjectService {
         return ProjectResponseDTO.from(project);
     }
 
+    @Transactional(readOnly = true)
+    public List<ProjectResponseDTO> getPublicProjects(String sortBy) {
+        List<Project> projects;
+        if ("likes".equalsIgnoreCase(sortBy)) {
+            projects = projectRepository.findAllByIsPublicTrueOrderByLikesCountDesc();
+        } else {
+            projects = projectRepository.findAllByIsPublicTrueOrderByUpdatedAtDesc();
+        }
+        return projects.stream()
+                .map(ProjectResponseDTO::from)
+                .toList();
+    }
+
     @Transactional
     public void addLike(Long projectId) {
         Project project = projectRepository.findById(projectId)

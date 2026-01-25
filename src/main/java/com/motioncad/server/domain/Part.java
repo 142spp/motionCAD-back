@@ -40,6 +40,9 @@ public class Part extends BaseTimeEntity {
     @JoinColumn(name = "creator_id")
     private User creator;
 
+    @Column(name = "likes_count")
+    private int likesCount;
+
     @Column(columnDefinition = "TEXT")
     private String prompt;
 }

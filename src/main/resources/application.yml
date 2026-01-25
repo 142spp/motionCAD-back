@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: motioncad-server
+  datasource:
+    url: jdbc:postgresql://db:5432/motioncad
+    username: user
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  devtools:
+    livereload:
+      enabled: true
+    restart:
+      enabled: true
+      additional-paths: src/main/java
+
+server:
+  port: 8080

@@ -13,28 +13,6 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    @Transactional
-    public Long signUp(String email, String passwordHash, String nickname) {
-        if (userRepository.existsByEmail(email)) {
-            throw new RuntimeException("Email already exists: " + email);
-        }
-
-        User user = User.builder()
-                .email(email)
-                .passwordHash(passwordHash)
-                .nickname(nickname)
-                .userSettings(UserSettings.builder()
-                        .handSensitivity(50)
-                        .isLeftHanded(false)
-                        .cameraResolution("720p")
-                        .uiTheme("dark")
-                        .build())
-                .build();
-
-        User savedUser = userRepository.save(user);
-        return savedUser.getId();
-    }
-
     @Transactional(readOnly = true)
     public User getUser(Long userId) {
         return userRepository.findById(userId)

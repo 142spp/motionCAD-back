@@ -6,6 +6,7 @@ import java.util.List;
 public record ProjectRequestDTO(
         @NotBlank String title,
         String description,
+        Long backgroundPartId,
         boolean isPublic,
         String previewImageUrl,
         List<ComponentRequestDTO> components) {

@@ -19,6 +19,12 @@ public class Part extends BaseTimeEntity {
     @Column(nullable = false)
     private String name;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PartType type;
+
+    private String description;
+
     private String category;
 
     @Column(name = "thumbnail_url")

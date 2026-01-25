@@ -1,60 +1,23 @@
-## 1. 인프라 및 환경 구축 (Day 1)
 
-협업 환경을 빠르게 조성해야 합니다.
 
-* **Dockerizing:** Spring Boot 애플리케이션을 Docker Image로 빌드할 수 있도록 `Dockerfile`을 작성하세요.
-* **CI/CD 환경 설정:** GitHub Actions 등을 활용해 메인 브랜치에 코드가 올라가면 자동으로 배포되는 환경을 구축하면, 프론트엔드 팀원이 API를 즉시 테스트할 수 있습니다.
-* **PostgreSQL / MySQL 설정:** 관계형 데이터베이스를 Docker 컨테이너로 띄우고 JPA(Spring Data JPA)와 연동하세요.
+## Hybrid Development Workflow
+- [x] Optimize for local development with Docker DB <!-- id: 26 -->
+    - [x] Update `application.yml` with local-friendly defaults
+    - [x] Verify Docker DB port exposure
+- [x] Document local run instructions <!-- id: 27 -->
+- [x] Create unified dev script (`dev.ps1`) <!-- id: 30 -->
 
----
+## Schema Refinement
+- [x] Refine Background & Object handling <!-- id: 31 -->
+    - [x] Update `Part` entity with `PartType` enum
+    - [x] Update `Project` entity to include `backgroundPart`
+    - [x] Update DTOs and Services to handle background selection
 
-## 2. 핵심 API 설계 및 구현
-
-프로젝트의 핵심 기능에 따른 백엔드 책임 범위입니다.
-
-### **A. 에셋 및 프로젝트 관리 (CRUD)**
-
-* **에셋 메타데이터 저장:** AI로 생성했거나 서버에 저장된 3D 오브젝트(예: .glb, .gltf 파일)의 이름, 태그, 경로 등을 관리합니다.
-* **프로젝트 저장:** 사용자가 배치한 오브젝트들의 **좌표, 회전값, 크기 정보**를 JSON 형태로 DB에 저장하고 불러오는 API가 필요합니다.
-
-### **B. AI 프롬프팅 연동**
-
-* **외부 API 통신:** OpenAI(DALL-E 기반 텍스처 등)나 3D 생성 AI(Luma AI, Meshy 등)의 API를 호출하는 기능을 구현해야 합니다.
-* **비동기 처리:** 3D 모델 생성은 시간이 걸리므로, 클라이언트에게 즉시 "생성 중" 응답을 주고 완료되면 알림을 보내거나 상태를 업데이트하는 로직이 필요합니다.
-
-### **C. 소셜 기능 (공유 및 상호작용)**
-
-* **좋아요/댓글 시스템:** 다른 유저의 결과물에 반응을 남길 수 있는 API를 구축합니다.
-* **커뮤니티 피드:** 인기순, 최신순으로 프로젝트를 조회하는 기능을 만듭니다.
-
----
-
-## 3. 파일 서버 및 저장소 (Storage)
-
-3D 에셋은 용량이 크기 때문에 DB에 직접 저장하지 않습니다.
-
-* **S3 연동:** AWS S3 혹은 로컬에 Docker 볼륨으로 마운트한 파일 저장소를 구축하고, 파일의 URL만 DB에 저장하세요.
-* **업로드/다운로드 최적화:** 프론트엔드에서 3D 파일을 빠르게 렌더링할 수 있도록 경로를 효율적으로 반환해야 합니다.
-
----
-
-## 4. 백엔드 아키텍처 예시
-
-이해를 돕기 위해 전체적인 데이터 흐름을 보여주는 아키텍처 구조입니다.
-
----
-
-## 5. 1주일 완성 전략 (Time Table)
-
-| 기간 | 주요 작업 내용 |
-| --- | --- |
-| **초반 (1~2일)** | DB 설계(ERD), Docker 환경 세팅, 회원가입/로그인(Spring Security) |
-| **중반 (3~5일)** | 3D 에셋 CRUD API, S3 파일 업로드, AI 생성 API 연동 |
-| **후반 (6~7일)** | 소셜 기능(좋아요, 댓글), 프론트엔드와 통합 테스트, 배포 최적화 |
-
----
-
-## 💡 백엔드 개발자로서 고려할 점
-
-1. **데이터 경량화:** 핸드 제스처로 실시간 이동을 할 때, 매번 서버에 저장하면 부하가 큽니다. 이동 중에는 프론트(Three.js 등)에서 처리하고, **'저장' 버튼을 누를 때만 최종 상태를 서버로 전송**하도록 프론트 팀원과 협의하세요.
-2. **API 문서화:** 1주일은 매우 짧습니다. **Swagger(Springdoc)**를 설정하여 프론트엔드 팀원이 API 명세서를 실시간으로 확인할 수 있게 하세요.
+## Authentication & Security
+- [x] Implement Spring Security & JWT <!-- id: 28 -->
+    - [x] Add Security & JWT dependencies
+    - [x] Configure `SecurityConfig` & CORS
+    - [x] Implement `JwtTokenProvider` & `JwtAuthenticationFilter`
+    - [x] Implement `AuthService` (Signup with BCrypt, Login)
+    - [x] Implement `AuthController`
+- [x] Secure existing endpoints <!-- id: 29 -->

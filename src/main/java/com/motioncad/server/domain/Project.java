@@ -26,6 +26,10 @@ public class Project extends BaseTimeEntity {
     @Column(nullable = false)
     private String title;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "background_part_id")
+    private Part backgroundPart;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 

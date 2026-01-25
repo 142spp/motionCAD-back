@@ -45,10 +45,24 @@ public class ProjectService {
             project.setPublic(dto.isPublic());
             project.setPreviewImageUrl(dto.previewImageUrl());
 
+            // Handle background
+            if (dto.backgroundPartId() != null) {
+                Part background = partRepository.findById(dto.backgroundPartId())
+                        .orElseThrow(
+                                () -> new RuntimeException("Background part not found: " + dto.backgroundPartId()));
+                project.setBackgroundPart(background);
+            }
+
             // Bulk Delete existing components for update
             componentRepository.deleteAllByProjectId(projectId);
         } else {
             project = dto.toEntity(user);
+            if (dto.backgroundPartId() != null) {
+                Part background = partRepository.findById(dto.backgroundPartId())
+                        .orElseThrow(
+                                () -> new RuntimeException("Background part not found: " + dto.backgroundPartId()));
+                project.setBackgroundPart(background);
+            }
             projectRepository.save(project);
         }
 

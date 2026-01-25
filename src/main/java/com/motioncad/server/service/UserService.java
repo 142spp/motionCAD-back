@@ -31,7 +31,8 @@ public class UserService {
                         .build())
                 .build();
 
-        return userRepository.save(user).getId();
+        User savedUser = userRepository.save(user);
+        return savedUser.getId();
     }
 
     @Transactional(readOnly = true)

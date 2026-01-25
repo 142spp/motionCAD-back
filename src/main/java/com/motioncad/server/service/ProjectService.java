@@ -75,4 +75,18 @@ public class ProjectService {
 
         return ProjectResponseDTO.from(project);
     }
+
+    @Transactional
+    public void addLike(Long projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found: " + projectId));
+        project.setLikesCount(project.getLikesCount() + 1);
+    }
+
+    @Transactional
+    public void addComment(Long projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found: " + projectId));
+        project.setCommentCount(project.getCommentCount() + 1);
+    }
 }

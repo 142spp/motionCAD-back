@@ -1,10 +1,9 @@
 spring:
-  application:
-    name: motioncad-server
   datasource:
-    url: jdbc:postgresql://db:5432/motioncad
-    username: user
-    password: password
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://db:5432/motioncad}
+    username: ${SPRING_DATASOURCE_USERNAME:user}
+    password: ${SPRING_DATASOURCE_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
@@ -12,12 +11,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
-  devtools:
-    livereload:
-      enabled: true
-    restart:
-      enabled: true
-      additional-paths: src/main/java
-
-server:
-  port: 8080
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  jackson:
+    serialization:
+      write_dates_as_timestamps: false

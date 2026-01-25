@@ -3,13 +3,18 @@ services:
     build: .
     ports:
       - "8080:8080"
+    restart: always
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/motioncad
-    volumes:
-      - .:/home/gradle/src
-      - ./build:/home/gradle/src/build
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
     depends_on:
       - db
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   db:
     image: postgres:15-alpine

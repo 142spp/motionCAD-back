@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,25 +26,6 @@ public class PartService {
     private final PartRepository partRepository;
     private final UserRepository userRepository;
     private final S3Service s3Service;
-
-    @Transactional
-    public Long createPartByAI(Long creatorId, String name, String prompt) {
-        User creator = userRepository.findById(creatorId)
-                .orElseThrow(() -> new RuntimeException("Creator not found: " + creatorId));
-
-        Part part = Part.builder()
-                .name(name)
-                .prompt(prompt)
-                .creator(creator)
-                .isPublic(true)
-                .isAiGenerated(true)
-                .category(PartCategory.ART_ABSTRACT)
-                .modelFileUrl("https://assets.motioncad.com/models/placeholder.glb")
-                .thumbnailUrl("https://assets.motioncad.com/thumbnails/placeholder.png")
-                .build();
-
-        return partRepository.save(part).getId();
-    }
 
     @Transactional(readOnly = true)
     public List<PartResponseDTO> getParts(PartType type, PartCategory category, String sortBy, String timeRange,
@@ -88,6 +70,49 @@ public class PartService {
             case "year" -> now.minusYears(1);
             default -> null;
         };
+    }
+
+    @Transactional
+    public Long confirmAiAsset(Long userId, String name, String externalUrl) throws java.io.IOException {
+        User creator = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+
+        // Transfer external file to our S3
+        String s3Key = s3Service.transferExternalFileToS3(externalUrl, "models");
+
+        Part part = Part.builder()
+                .name(name != null ? name : "AI Generated Asset")
+                .type(PartType.OBJECT) // Defaulting to OBJECT for AI generated parts
+                .category(PartCategory.ART_ABSTRACT)
+                .modelFileUrl(s3Key)
+                .creator(creator)
+                .isPublic(true)
+                .isAiGenerated(true)
+                .build();
+
+        return partRepository.save(part).getId();
+    }
+
+    @Transactional
+    public Long uploadUserPart(Long userId, String name, PartType type, PartCategory category, MultipartFile modelFile)
+            throws java.io.IOException {
+        User creator = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+
+        // Upload to S3
+        String s3Key = s3Service.uploadFile(modelFile, "models");
+
+        Part part = Part.builder()
+                .name(name)
+                .type(type)
+                .category(category)
+                .modelFileUrl(s3Key)
+                .creator(creator)
+                .isPublic(true)
+                .isAiGenerated(false)
+                .build();
+
+        return partRepository.save(part).getId();
     }
 
     @Transactional

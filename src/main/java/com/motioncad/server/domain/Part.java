@@ -26,15 +26,16 @@ public class Part extends BaseTimeEntity {
     @Column(nullable = false)
     private PartType type;
 
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Enumerated(EnumType.STRING)
     private PartCategory category;
 
-    @Column(name = "thumbnail_url")
+    @Column(name = "thumbnail_url", columnDefinition = "TEXT")
     private String thumbnailUrl;
 
-    @Column(name = "model_file_url")
+    @Column(name = "model_file_url", columnDefinition = "TEXT")
     private String modelFileUrl;
 
     @Column(name = "is_public")
@@ -55,7 +56,4 @@ public class Part extends BaseTimeEntity {
 
     @Column(name = "is_ai_generated")
     private boolean isAiGenerated;
-
-    @Column(columnDefinition = "TEXT")
-    private String prompt;
 }

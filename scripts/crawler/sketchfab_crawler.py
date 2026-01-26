@@ -171,10 +171,10 @@ if __name__ == "__main__":
     if not SKETCHFAB_API_TOKEN:
         print("Please set SKETCHFAB_API_TOKEN in .env file.")
     else:
-        query = "fancy house"
+        query = "low poly"
         safe_print(f"Searching for '{query}'...")
         # count is set in search_sketchfab call, or can be passed here
-        results = search_sketchfab(query, count=5)
+        results = search_sketchfab(query, count=100)
         
         safe_print(f"Found {len(results)} models. Starting parallel processing...")
         

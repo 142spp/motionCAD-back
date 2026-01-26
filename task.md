@@ -34,3 +34,9 @@
 - [x] Provide Python Crawler Example <!-- id: 34 -->
     - [x] Create a sample script to search and download from Sketchfab
     - [x] (Optional) Add Draco compression step using `gltf-pipeline`
+- [x] Implement AI Asset Confirmation Flow <!-- id: 35 -->
+    - [x] Add S3 transfer logic for external URLs
+    - [x] Implement confirm endpoint for users to save AI assets
+- [x] Cleanup Legacy AI Logic & Schema <!-- id: 36 -->
+    - [x] Remove `prompt` field from `Part` entity
+    - [x] Delete legacy `createPartByAI` service and controller methods

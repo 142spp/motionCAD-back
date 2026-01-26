@@ -5,8 +5,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -28,16 +31,24 @@ public class PartController {
         return partService.getParts(type, category, sort, timeRange, isAiGenerated);
     }
 
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Upload Part", description = "Manually uploads a 3D model file and registers it as a Part.")
+    public Long uploadPart(
+            @RequestParam("name") String name,
+            @RequestParam("type") com.motioncad.server.domain.PartType type,
+            @RequestParam("category") com.motioncad.server.domain.PartCategory category,
+            @RequestPart("modelFile") MultipartFile modelFile) throws IOException {
+
+        // TODO: In production, get userId from SecurityContext
+        Long currentUserId = 1L;
+
+        return partService.uploadUserPart(currentUserId, name, type, category, modelFile);
+    }
+
     @PostMapping("/{partId}/like")
     @Operation(summary = "Like Part", description = "Increases the like count of a part.")
     public void likePart(@PathVariable Long partId) {
         partService.addLike(partId);
-    }
-
-    @PostMapping("/ai-generate")
-    @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Generate Part by AI", description = "Saves an AI generation prompt and returns a dummy GLB model path.")
-    public Long generatePart(@RequestParam Long creatorId, @RequestParam String name, @RequestParam String prompt) {
-        return partService.createPartByAI(creatorId, name, prompt);
     }
 }

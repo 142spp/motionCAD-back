@@ -12,6 +12,9 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.time.Duration;
 import java.util.UUID;
 
@@ -37,6 +40,27 @@ public class S3Service {
         s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 
         // Return the key (path) instead of the full URL
+        return fileName;
+    }
+
+    public String transferExternalFileToS3(String externalUrl, String directory) throws IOException {
+        URL url = new URL(externalUrl);
+        URLConnection connection = url.openConnection();
+        String contentType = connection.getContentType();
+        long contentLength = connection.getContentLengthLong();
+
+        String fileName = directory + "/" + UUID.randomUUID() + ".glb"; // AI models are usually .glb
+
+        try (InputStream inputStream = connection.getInputStream()) {
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(fileName)
+                    .contentType(contentType != null ? contentType : "application/octet-stream")
+                    .build();
+
+            s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(inputStream, contentLength));
+        }
+
         return fileName;
     }
 

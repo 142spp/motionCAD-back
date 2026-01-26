@@ -21,9 +21,11 @@ public class ProjectController {
     private final ProjectService projectService;
 
     @GetMapping
-    @Operation(summary = "List Public Projects", description = "Fetches a list of public projects sorted by latest or likes.")
-    public List<ProjectResponseDTO> getPublicProjects(@RequestParam(defaultValue = "latest") String sort) {
-        return projectService.getPublicProjects(sort);
+    @Operation(summary = "List Public Projects", description = "Fetches a list of public projects sorted by latest, likes, views, or comments, and filtered by time range.")
+    public List<ProjectResponseDTO> getPublicProjects(
+            @RequestParam(defaultValue = "latest") String sort,
+            @RequestParam(required = false) String timeRange) {
+        return projectService.getPublicProjects(sort, timeRange);
     }
 
     @PostMapping

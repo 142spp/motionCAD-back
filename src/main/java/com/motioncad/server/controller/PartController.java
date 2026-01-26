@@ -18,11 +18,14 @@ public class PartController {
     private final PartService partService;
 
     @GetMapping
-    @Operation(summary = "List Parts", description = "Fetches a list of parts filtered by type (BACKGROUND/OBJECT) and sorted by latest or likes.")
+    @Operation(summary = "List Parts", description = "Fetches a list of parts filtered by type, category, time range, and AI-generated flag.")
     public List<com.motioncad.server.dto.PartResponseDTO> getParts(
             @RequestParam com.motioncad.server.domain.PartType type,
-            @RequestParam(defaultValue = "latest") String sort) {
-        return partService.getPartsByType(type, sort);
+            @RequestParam(required = false) com.motioncad.server.domain.PartCategory category,
+            @RequestParam(defaultValue = "latest") String sort,
+            @RequestParam(required = false) String timeRange,
+            @RequestParam(required = false) Boolean isAiGenerated) {
+        return partService.getParts(type, category, sort, timeRange, isAiGenerated);
     }
 
     @PostMapping("/{partId}/like")

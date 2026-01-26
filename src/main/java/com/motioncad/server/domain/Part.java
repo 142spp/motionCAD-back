@@ -25,7 +25,8 @@ public class Part extends BaseTimeEntity {
 
     private String description;
 
-    private String category;
+    @Enumerated(EnumType.STRING)
+    private PartCategory category;
 
     @Column(name = "thumbnail_url")
     private String thumbnailUrl;
@@ -42,6 +43,15 @@ public class Part extends BaseTimeEntity {
 
     @Column(name = "likes_count")
     private int likesCount;
+
+    @Column(name = "views_count")
+    private int viewsCount;
+
+    @Column(name = "comment_count")
+    private int commentCount;
+
+    @Column(name = "is_ai_generated")
+    private boolean isAiGenerated;
 
     @Column(columnDefinition = "TEXT")
     private String prompt;

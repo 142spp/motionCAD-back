@@ -10,4 +10,19 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "Starting Spring Boot Application..." -ForegroundColor Cyan
+
+# Load .env file into environment variables
+if (Test-Path ".env") {
+    Write-Host "Loading .env file..." -ForegroundColor DarkGray
+    Get-Content .env | ForEach-Object {
+        $line = $_.Trim()
+        if ($line -match '^[^#\s=]+=' ) {
+            $key, $value = $line.Split('=', 2)
+            $key = $key.Trim()
+            $value = $value.Trim()
+            [System.Environment]::SetEnvironmentVariable($key, $value, "Process")
+        }
+    }
+}
+
 ./gradlew bootRun

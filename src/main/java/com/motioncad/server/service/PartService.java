@@ -95,4 +95,21 @@ public class PartService {
                 .orElseThrow(() -> new RuntimeException("Part not found: " + partId));
         part.setLikesCount(part.getLikesCount() + 1);
     }
+
+    @Transactional
+    public Long createPartWithS3(String name, PartType type, PartCategory category, String modelUrl,
+            String thumbnailUrl, String description) {
+        Part part = Part.builder()
+                .name(name)
+                .type(type)
+                .category(category)
+                .modelFileUrl(modelUrl)
+                .thumbnailUrl(thumbnailUrl)
+                .description(description)
+                .isPublic(true)
+                .isAiGenerated(false) // Crawled assets are not AI generated in this context
+                .build();
+
+        return partRepository.save(part).getId();
+    }
 }

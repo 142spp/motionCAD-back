@@ -19,6 +19,9 @@ public class Part extends BaseTimeEntity {
     @Column(nullable = false)
     private String name;
 
+    @Column(name = "source_id", unique = true)
+    private String sourceId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PartType type;

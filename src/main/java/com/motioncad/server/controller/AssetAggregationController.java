@@ -25,6 +25,7 @@ public class AssetAggregationController {
             @RequestParam("type") String type,
             @RequestParam("category") String category,
             @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "sourceId", required = false) String sourceId,
             @RequestPart("modelFile") MultipartFile modelFile,
             @RequestPart(value = "thumbnailFile", required = false) MultipartFile thumbnailFile) throws IOException {
 
@@ -40,8 +41,14 @@ public class AssetAggregationController {
                 PartCategory.valueOf(category.toUpperCase()),
                 modelUrl,
                 thumbnailUrl,
-                description);
+                description,
+                sourceId);
 
         return ResponseEntity.ok(partId);
+    }
+
+    @GetMapping("/check-duplicate/{sourceId}")
+    public ResponseEntity<Boolean> checkDuplicate(@PathVariable("sourceId") String sourceId) {
+        return ResponseEntity.ok(partService.existsBySourceId(sourceId));
     }
 }

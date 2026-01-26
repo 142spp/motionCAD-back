@@ -24,6 +24,7 @@ public class PartService {
 
     private final PartRepository partRepository;
     private final UserRepository userRepository;
+    private final S3Service s3Service;
 
     @Transactional
     public Long createPartByAI(Long creatorId, String name, String prompt) {
@@ -65,7 +66,7 @@ public class PartService {
 
         Sort sort = calculateSort(sortBy);
         return partRepository.findAll(spec, sort).stream()
-                .map(PartResponseDTO::from)
+                .map(part -> PartResponseDTO.from(part, s3Service))
                 .toList();
     }
 
@@ -98,7 +99,7 @@ public class PartService {
 
     @Transactional
     public Long createPartWithS3(String name, PartType type, PartCategory category, String modelUrl,
-            String thumbnailUrl, String description) {
+            String thumbnailUrl, String description, String sourceId) {
         Part part = Part.builder()
                 .name(name)
                 .type(type)
@@ -106,10 +107,19 @@ public class PartService {
                 .modelFileUrl(modelUrl)
                 .thumbnailUrl(thumbnailUrl)
                 .description(description)
+                .sourceId(sourceId)
                 .isPublic(true)
                 .isAiGenerated(false) // Crawled assets are not AI generated in this context
                 .build();
 
         return partRepository.save(part).getId();
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existsBySourceId(String sourceId) {
+        if (sourceId == null || sourceId.isBlank()) {
+            return false;
+        }
+        return partRepository.existsBySourceId(sourceId);
     }
 }

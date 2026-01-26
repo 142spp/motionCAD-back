@@ -28,6 +28,7 @@ public class ProjectService {
     private final ProjectComponentRepository componentRepository;
     private final UserRepository userRepository;
     private final PartRepository partRepository;
+    private final S3Service s3Service;
 
     @Transactional
     public Long saveProject(Long userId, Long projectId, ProjectRequestDTO dto) {
@@ -91,7 +92,7 @@ public class ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found: " + projectId));
 
-        return ProjectResponseDTO.from(project);
+        return ProjectResponseDTO.from(project, s3Service);
     }
 
     @Transactional(readOnly = true)
@@ -105,7 +106,7 @@ public class ProjectService {
 
         Sort sort = calculateSort(sortBy);
         return projectRepository.findAll(spec, sort).stream()
-                .map(ProjectResponseDTO::from)
+                .map(project -> ProjectResponseDTO.from(project, s3Service))
                 .toList();
     }
 

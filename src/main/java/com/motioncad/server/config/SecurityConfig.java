@@ -42,13 +42,10 @@ public class SecurityConfig {
 				.csrf(AbstractHttpConfigurer::disable)
 				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/api/auth/**").permitAll()
-						.requestMatchers("/api/parts/public", "/api/assets/**", "/api/health", "/error").permitAll()
-						.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-						.anyRequest().authenticated())
-				.addFilterBefore(new JwtAuthenticationFilter(tokenProvider),
-						UsernamePasswordAuthenticationFilter.class);
+				.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+		// .addFilterBefore(new JwtAuthenticationFilter(tokenProvider),
+		// UsernamePasswordAuthenticationFilter.class)
+		;
 		return http.build();
 	}
 

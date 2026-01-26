@@ -1,0 +1,42 @@
+﻿> Task :compileJava FAILED
+./gradlew : 
+위치 줄:1 문자:1
++ ./gradlew compileJava > bu
+ild_log.txt 2>&1; Get-Conten
+t build_log.txt ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
+    + CategoryInfo          
+    : NotSpecified: (:Stri  
+  ng) [], RemoteException
+    + FullyQualifiedErrorId 
+    : NativeCommandError
+ 
+FAILURE: Build failed with a
+n exception.
+
+* What went wrong:
+Execution failed for task ':
+compileJava'.
+> Could not resolve all file
+s for configuration ':compil
+eClasspath'.
+   > Could not find software
+.amazon.awssdk:s3-presigner:
+2.25.0.
+     Required by:
+         project :
+
+* Try:
+> Run with --stacktrace opti
+on to get the stack trace.
+> Run with --info or --debug
+ option to get more log outp
+ut.
+> Run with --scan to get ful
+l insights.
+> Get more help at https://h
+elp.gradle.org.
+
+BUILD FAILED in 2s
+1 actionable task: 1 executed

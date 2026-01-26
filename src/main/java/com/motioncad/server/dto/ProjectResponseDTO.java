@@ -1,6 +1,7 @@
 package com.motioncad.server.dto;
 
 import com.motioncad.server.domain.Project;
+import com.motioncad.server.service.S3Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,6 +22,15 @@ public record ProjectResponseDTO(
 		LocalDateTime createdAt,
 		LocalDateTime updatedAt) {
 	public static ProjectResponseDTO from(Project project) {
+		return from(project, null);
+	}
+
+	public static ProjectResponseDTO from(Project project, S3Service s3Service) {
+		String previewUrl = project.getPreviewImageUrl();
+		if (s3Service != null) {
+			previewUrl = s3Service.generatePresignedUrl(previewUrl);
+		}
+
 		return new ProjectResponseDTO(
 				project.getId(),
 				project.getTitle(),
@@ -29,7 +39,7 @@ public record ProjectResponseDTO(
 				project.getBackgroundPart() != null ? project.getBackgroundPart().getId() : null,
 				project.getBackgroundPart() != null ? project.getBackgroundPart().getName() : null,
 				project.isPublic(),
-				project.getPreviewImageUrl(),
+				previewUrl,
 				project.getLikesCount(),
 				project.getViewsCount(),
 				project.getCommentCount(),

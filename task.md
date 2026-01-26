@@ -23,10 +23,11 @@
 - [ ] Secure existing endpoints <!-- id: 29 -->
 
 ## Asset Pipeline & S3 Integration
-- [x] Implement AWS S3 Service <!-- id: 32 -->
+- [x] Asset Pipeline & S3 Integration <!-- id: 32 -->
     - [x] Add `software.amazon.awssdk:s3` dependency
     - [x] Configure S3 credentials in `application.yml`
     - [x] Create `S3Service` for file uploads
+    - [x] Implement S3 Presigned URLs (5-minute expiration) for secure asset access
 - [x] Create Asset Crawling API <!-- id: 33 -->
     - [x] Implement endpoint to receive asset metadata and files
     - [x] Integrate with `PartService` to save parts

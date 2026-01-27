@@ -6,6 +6,8 @@ app:
     allowed-origins: ${ALLOWED_ORIGINS:http://localhost:3000}
 
 spring:
+  profiles:
+    active: dev
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/motioncad}
     username: ${SPRING_DATASOURCE_USERNAME:user}
@@ -14,7 +16,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
@@ -38,3 +40,13 @@ cloud:
       bucket: ${AWS_S3_BUCKET:motioncad-assets}
       stack:
         auto: false
+
+logging:
+  level:
+    "[org.springframework.web]": INFO
+    "[org.springframework.web.servlet.mvc.method.annotation]": INFO
+    "[org.apache.http]": WARN
+    "[org.springframework.security]": INFO
+    "[com.motioncad.server]": DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

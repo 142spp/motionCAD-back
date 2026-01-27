@@ -33,17 +33,19 @@ public class PartController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Upload Part", description = "Manually uploads a 3D model file and registers it as a Part.")
+    @Operation(summary = "Upload Part", description = "Uploads a 3D model file with optional thumbnail and registers it as a Part.")
     public Long uploadPart(
             @RequestParam("name") String name,
             @RequestParam("type") com.motioncad.server.domain.PartType type,
             @RequestParam("category") com.motioncad.server.domain.PartCategory category,
-            @RequestPart("modelFile") MultipartFile modelFile) throws IOException {
+            @RequestPart("modelFile") MultipartFile modelFile,
+            @RequestPart(value = "thumbnailFile", required = false) MultipartFile thumbnailFile,
+            @RequestParam(value = "isAiGenerated", defaultValue = "false") Boolean isAiGenerated) throws IOException {
 
         // TODO: In production, get userId from SecurityContext
         Long currentUserId = 1L;
 
-        return partService.uploadUserPart(currentUserId, name, type, category, modelFile);
+        return partService.uploadUserPart(currentUserId, name, type, category, modelFile, thumbnailFile, isAiGenerated);
     }
 
     @PostMapping("/{partId}/like")

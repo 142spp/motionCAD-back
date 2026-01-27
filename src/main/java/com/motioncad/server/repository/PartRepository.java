@@ -15,5 +15,7 @@ public interface PartRepository extends JpaRepository<Part, Long>, JpaSpecificat
 
     List<Part> findAllByTypeAndIsPublicTrueOrderByLikesCountDesc(com.motioncad.server.domain.PartType type);
 
-    boolean existsBySourceId(String sourceId);
+    java.util.Optional<Part> findByFileHash(String fileHash);
+
+    boolean existsByFileHash(String fileHash);
 }

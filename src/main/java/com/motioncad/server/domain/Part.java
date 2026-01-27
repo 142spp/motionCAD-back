@@ -19,8 +19,8 @@ public class Part extends BaseTimeEntity {
     @Column(nullable = false)
     private String name;
 
-    @Column(name = "source_id", unique = true)
-    private String sourceId;
+    @Column(name = "file_hash", unique = true, length = 32)
+    private String fileHash; // MD5 hash of the model file
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

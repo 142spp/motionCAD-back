@@ -73,43 +73,41 @@ public class PartService {
     }
 
     @Transactional
-    public Long confirmAiAsset(Long userId, String name, String externalUrl) throws java.io.IOException {
-        User creator = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
-
-        // Transfer external file to our S3
-        String s3Key = s3Service.transferExternalFileToS3(externalUrl, "models");
-
-        Part part = Part.builder()
-                .name(name != null ? name : "AI Generated Asset")
-                .type(PartType.OBJECT) // Defaulting to OBJECT for AI generated parts
-                .category(PartCategory.ART_ABSTRACT)
-                .modelFileUrl(s3Key)
-                .creator(creator)
-                .isPublic(true)
-                .isAiGenerated(true)
-                .build();
-
-        return partRepository.save(part).getId();
-    }
-
-    @Transactional
-    public Long uploadUserPart(Long userId, String name, PartType type, PartCategory category, MultipartFile modelFile)
+    public Long uploadUserPart(Long userId, String name, PartType type, PartCategory category,
+            MultipartFile modelFile, MultipartFile thumbnailFile, Boolean isAiGenerated)
             throws java.io.IOException {
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
-        // Upload to S3
-        String s3Key = s3Service.uploadFile(modelFile, "models");
+        // Calculate file hash for deduplication
+        String fileHash = s3Service.calculateFileHash(modelFile);
+
+        // Check if this file already exists
+        if (partRepository.existsByFileHash(fileHash)) {
+            Part existingPart = partRepository.findByFileHash(fileHash)
+                    .orElseThrow(() -> new RuntimeException("Hash exists but part not found"));
+            return existingPart.getId(); // Return existing part ID instead of uploading again
+        }
+
+        // Upload model file to S3
+        String modelS3Key = s3Service.uploadFile(modelFile, "models");
+
+        // Upload thumbnail file to S3 if provided
+        String thumbnailS3Key = null;
+        if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
+            thumbnailS3Key = s3Service.uploadFile(thumbnailFile, "thumbnails");
+        }
 
         Part part = Part.builder()
                 .name(name)
                 .type(type)
                 .category(category)
-                .modelFileUrl(s3Key)
+                .modelFileUrl(modelS3Key)
+                .thumbnailUrl(thumbnailS3Key)
+                .fileHash(fileHash)
                 .creator(creator)
                 .isPublic(true)
-                .isAiGenerated(false)
+                .isAiGenerated(isAiGenerated != null ? isAiGenerated : false)
                 .build();
 
         return partRepository.save(part).getId();
@@ -120,31 +118,5 @@ public class PartService {
         Part part = partRepository.findById(partId)
                 .orElseThrow(() -> new RuntimeException("Part not found: " + partId));
         part.setLikesCount(part.getLikesCount() + 1);
-    }
-
-    @Transactional
-    public Long createPartWithS3(String name, PartType type, PartCategory category, String modelUrl,
-            String thumbnailUrl, String description, String sourceId) {
-        Part part = Part.builder()
-                .name(name)
-                .type(type)
-                .category(category)
-                .modelFileUrl(modelUrl)
-                .thumbnailUrl(thumbnailUrl)
-                .description(description)
-                .sourceId(sourceId)
-                .isPublic(true)
-                .isAiGenerated(false) // Crawled assets are not AI generated in this context
-                .build();
-
-        return partRepository.save(part).getId();
-    }
-
-    @Transactional(readOnly = true)
-    public boolean existsBySourceId(String sourceId) {
-        if (sourceId == null || sourceId.isBlank()) {
-            return false;
-        }
-        return partRepository.existsBySourceId(sourceId);
     }
 }

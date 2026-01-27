@@ -43,6 +43,7 @@ public class S3Service {
         return fileName;
     }
 
+    // 외부 URL의 파일을 S3로 전송 *지금은 사용하지않음*
     public String transferExternalFileToS3(String externalUrl, String directory) throws IOException {
         URL url = new URL(externalUrl);
         URLConnection connection = url.openConnection();
@@ -76,5 +77,29 @@ public class S3Service {
 
         PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
         return presignedRequest.url().toExternalForm();
+    }
+
+    /**
+     * Calculate MD5 hash of a file for deduplication
+     */
+    public String calculateFileHash(MultipartFile file) throws IOException {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("MD5");
+            try (InputStream is = file.getInputStream()) {
+                byte[] buffer = new byte[8192];
+                int read;
+                while ((read = is.read(buffer)) != -1) {
+                    md.update(buffer, 0, read);
+                }
+            }
+            byte[] digest = md.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new RuntimeException("MD5 algorithm not found", e);
+        }
     }
 }

@@ -49,7 +49,7 @@ public class AuthService {
             throw new RuntimeException("Invalid password");
         }
 
-        String token = tokenProvider.createToken(user.getEmail());
+        String token = tokenProvider.createToken(user.getEmail(), user.getId());
         return new TokenResponseDTO(token);
     }
 }

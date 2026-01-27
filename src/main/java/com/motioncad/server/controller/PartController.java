@@ -1,11 +1,13 @@
 package com.motioncad.server.controller;
 
 import com.motioncad.server.service.PartService;
+import com.motioncad.server.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -28,9 +30,8 @@ public class PartController {
             @RequestParam(defaultValue = "latest") String sort,
             @RequestParam(required = false) String timeRange,
             @RequestParam(required = false) Boolean isAiGenerated,
-            @RequestParam(defaultValue = "20") Integer count) {
-        // Validate count parameter: maximum 50
-        int validatedCount = Math.min(count != null ? count : 20, 50);
+            @RequestParam(defaultValue = "50") Integer count) {
+        int validatedCount = Math.min(count != null ? count : 50, 100);
         return partService.getParts(type, category, sort, timeRange, isAiGenerated, validatedCount);
     }
 
@@ -49,12 +50,11 @@ public class PartController {
             @RequestParam("category") com.motioncad.server.domain.PartCategory category,
             @RequestPart("modelFile") MultipartFile modelFile,
             @RequestPart(value = "thumbnailFile", required = false) MultipartFile thumbnailFile,
-            @RequestParam(value = "isAiGenerated", defaultValue = "false") Boolean isAiGenerated) throws IOException {
+            @RequestParam(value = "isAiGenerated", defaultValue = "false") Boolean isAiGenerated,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) throws IOException {
 
-        // TODO: In production, get userId from SecurityContext
-        Long currentUserId = 1L;
-
-        return partService.uploadUserPart(currentUserId, name, type, category, modelFile, thumbnailFile, isAiGenerated);
+        return partService.uploadUserPart(userPrincipal.getId(), name, type, category, modelFile, thumbnailFile,
+                isAiGenerated);
     }
 
     @PostMapping("/{partId}/like")

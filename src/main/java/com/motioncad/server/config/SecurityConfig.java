@@ -1,6 +1,7 @@
 package com.motioncad.server.config;
 
 import com.motioncad.server.security.CustomOAuth2UserService;
+import com.motioncad.server.security.HttpCookieOAuth2AuthorizationRequestRepository;
 import com.motioncad.server.security.JwtAuthenticationFilter;
 import com.motioncad.server.security.JwtTokenProvider;
 import com.motioncad.server.security.OAuth2AuthenticationSuccessHandler;
@@ -31,6 +32,7 @@ public class SecurityConfig {
 	private final JwtTokenProvider tokenProvider;
 	private final CustomOAuth2UserService customOAuth2UserService;
 	private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+	private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
 	@Value("${app.cors.allowed-origins}")
 	private List<String> allowedOrigins;
@@ -46,14 +48,24 @@ public class SecurityConfig {
 				.csrf(csrf -> csrf.disable())
 				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+				.authorizeHttpRequests(auth -> auth
+						.requestMatchers("/api/auth/**", "/oauth2/**", "/login/**").permitAll()
+						.requestMatchers(org.springframework.http.HttpMethod.GET, "/api/parts/**").permitAll()
+						.requestMatchers(org.springframework.http.HttpMethod.GET, "/api/transfer/download/**")
+						.permitAll()
+						.requestMatchers("/api/parts/**", "/api/transfer/**", "/api/users/**").authenticated()
+						.anyRequest().permitAll())
 				.oauth2Login(oauth2 -> oauth2
+						.authorizationEndpoint(authorization -> authorization
+								.baseUri("/oauth2/authorization")
+								.authorizationRequestRepository(httpCookieOAuth2AuthorizationRequestRepository))
+						.redirectionEndpoint(redirection -> redirection
+								.baseUri("/login/oauth2/code/*"))
 						.userInfoEndpoint(userInfo -> userInfo
 								.userService(customOAuth2UserService))
 						.successHandler(oAuth2AuthenticationSuccessHandler))
-		// .addFilterBefore(new JwtAuthenticationFilter(tokenProvider),
-		// UsernamePasswordAuthenticationFilter.class)
-		;
+				.addFilterBefore(new JwtAuthenticationFilter(tokenProvider),
+						UsernamePasswordAuthenticationFilter.class);
 		return http.build();
 	}
 

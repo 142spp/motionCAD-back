@@ -60,6 +60,18 @@ public class TransferService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<TransferDTOs.FileResponse> downloadFile(String fileId) {
+        log.info("Downloading file with fileId: {}", fileId);
+
+        return transferFileRepository.findByFileId(fileId)
+                .map(transferFile -> {
+                    byte[] content = s3Service.downloadFile(transferFile.getS3Key());
+                    log.info("Successfully fetched file content from S3 for fileId: {}", fileId);
+                    return new TransferDTOs.FileResponse(content, transferFile.getOriginalFileName());
+                });
+    }
+
+    @Transactional(readOnly = true)
     public Optional<TransferDTOs.LatestFileResponse> getLatestFile() {
         log.info("Getting latest uploaded file");
 

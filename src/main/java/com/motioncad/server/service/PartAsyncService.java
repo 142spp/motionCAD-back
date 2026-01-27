@@ -32,13 +32,13 @@ public class PartAsyncService {
 
             // Upload model file
             String modelS3Key = s3Service.uploadFileBytes(modelData, "models", modelFileName, modelContentType);
-            part.setModelFileUrl(modelS3Key);
+            part.setModelFileUrl(s3Service.getPublicUrl(modelS3Key));
 
             // Upload thumbnail file if provided
             if (thumbnailData != null) {
                 String thumbnailS3Key = s3Service.uploadFileBytes(thumbnailData, "thumbnails", thumbnailFileName,
                         thumbnailContentType);
-                part.setThumbnailUrl(thumbnailS3Key);
+                part.setThumbnailUrl(s3Service.getPublicUrl(thumbnailS3Key));
             }
 
             part.setUploadStatus(UploadStatus.SUCCESS);

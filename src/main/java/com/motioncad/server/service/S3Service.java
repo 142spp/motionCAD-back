@@ -83,6 +83,18 @@ public class S3Service {
         return presignedRequest.url().toExternalForm();
     }
 
+    public String getPublicUrl(String key) {
+        if (key == null || key.isEmpty() || key.startsWith("http")) {
+            return key;
+        }
+        return String.format("https://%s.s3.amazonaws.com/%s", bucket, key);
+    }
+
+    public byte[] downloadFile(String key) {
+        return s3Client.getObjectAsBytes(builder -> builder.bucket(bucket).key(key).build())
+                .asByteArray();
+    }
+
     /**
      * Calculate MD5 hash of a file for deduplication
      */

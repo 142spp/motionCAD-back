@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
@@ -33,8 +32,9 @@ public class JwtTokenProvider {
 		this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
 	}
 
-	public String createToken(String email) {
+	public String createToken(String email, Long userId) {
 		Claims claims = Jwts.claims().setSubject(email);
+		claims.put("userId", userId);
 		Date now = new Date();
 		Date validity = new Date(now.getTime() + validityInMilliseconds);
 
@@ -47,14 +47,22 @@ public class JwtTokenProvider {
 	}
 
 	public Authentication getAuthentication(String token) {
-		String email = getSubject(token);
+		Claims claims = parseClaims(token);
+		String email = claims.getSubject();
+		Long userId = claims.get("userId", Long.class);
+
 		List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
-		User principal = new User(email, "", authorities);
+		UserPrincipal principal = new UserPrincipal(userId, email, "", authorities);
+
 		return new UsernamePasswordAuthenticationToken(principal, token, authorities);
 	}
 
+	private Claims parseClaims(String token) {
+		return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
+	}
+
 	public String getSubject(String token) {
-		return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody().getSubject();
+		return parseClaims(token).getSubject();
 	}
 
 	public boolean validateToken(String token) {

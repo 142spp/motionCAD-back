@@ -5,6 +5,7 @@ import com.motioncad.server.service.TransferService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.URI;
 
 @RestController
 @RequestMapping("/api/transfer")
@@ -33,12 +33,14 @@ public class TransferController {
     }
 
     @GetMapping("/download/{fileId}")
-    @Operation(summary = "Download GLB File", description = "Redirects to the presigned S3 URL for downloading the GLB file by fileId.")
-    public ResponseEntity<Void> downloadGlbFile(@PathVariable String fileId) {
-        return transferService.getFileDownloadUrl(fileId)
-                .<ResponseEntity<Void>>map(url -> ResponseEntity.status(HttpStatus.FOUND)
-                        .location(URI.create(url))
-                        .build())
+    @Operation(summary = "Download GLB File", description = "Returns the GLB file directly by fileId (proxied from S3 to avoid CORS issues).")
+    public ResponseEntity<byte[]> downloadGlbFile(@PathVariable String fileId) {
+        return transferService.downloadFile(fileId)
+                .map(fileResponse -> ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType("application/octet-stream"))
+                        .header(HttpHeaders.CONTENT_DISPOSITION,
+                                "attachment; filename=\"" + fileResponse.fileName() + "\"")
+                        .body(fileResponse.content()))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 

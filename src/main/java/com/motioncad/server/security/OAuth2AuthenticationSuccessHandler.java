@@ -11,6 +11,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
+import com.motioncad.server.security.HttpCookieOAuth2AuthorizationRequestRepository;
 
 import java.io.IOException;
 
@@ -20,6 +21,8 @@ import java.io.IOException;
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtTokenProvider tokenProvider;
+    private final com.motioncad.server.repository.UserRepository userRepository;
+    private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
     @Value("${app.oauth2.redirect-uri}")
     private String redirectUri;
@@ -40,7 +43,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         }
 
         // Generate JWT token
-        String token = tokenProvider.createToken(email);
+        com.motioncad.server.domain.User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        String token = tokenProvider.createToken(email, user.getId());
 
         // Redirect to frontend with token
         String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
@@ -48,6 +53,12 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 .build().toUriString();
 
         log.info("Redirecting to: {}", targetUrl);
+        clearAuthenticationAttributes(request, response);
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
+    }
+
+    protected void clearAuthenticationAttributes(HttpServletRequest request, HttpServletResponse response) {
+        super.clearAuthenticationAttributes(request);
+        httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
     }
 }

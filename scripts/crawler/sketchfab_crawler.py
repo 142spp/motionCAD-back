@@ -84,10 +84,11 @@ def download_model(model_data):
     model_name = "".join(c for c in model_data['name'] if c.isalnum() or c in (' ', '_')).rstrip()
     
     # Check if file already exists locally and is valid
-    os.makedirs("temp_downloads", exist_ok=True)
+    models_dir = "temp_downloads/models"
+    os.makedirs(models_dir, exist_ok=True)
     
     # Check for existing GLB file
-    glb_file = f"temp_downloads/{model_uid}.glb"
+    glb_file = f"{models_dir}/{model_uid}.glb"
     if os.path.exists(glb_file):
         if is_valid_glb(glb_file):
             safe_print(f"[Reuse] Valid GLB file exists: {glb_file}")
@@ -97,7 +98,7 @@ def download_model(model_data):
             os.remove(glb_file)
     
     # Check for existing ZIP file
-    zip_file = f"temp_downloads/{model_uid}.zip"
+    zip_file = f"{models_dir}/{model_uid}.zip"
     if os.path.exists(zip_file):
         # For ZIP files, just check if they're not empty and can be opened
         try:
@@ -139,7 +140,7 @@ def download_model(model_data):
         safe_print(f"Downloading {format_to_download} ({file_size / 1024 / 1024:.2f} MB)...")
         
         ext = "glb" if format_to_download == "glb" else "zip"
-        file_path = f"temp_downloads/{model_uid}.{ext}"
+        file_path = f"{models_dir}/{model_uid}.{ext}"
         
         file_res = requests.get(file_url, stream=True, timeout=30)
         file_res.raise_for_status()
@@ -211,20 +212,54 @@ def download_thumbnail(model_data):
         safe_print(f"[Error] Thumbnail download failed for {model_name}: {e}")
         return None
 
-def upload_to_backend(file_path, model_data):
-    """Upload the downloaded file to Spring Boot backend."""
+def get_category_for_search(search_query):
+    """Map search query to DB PartCategory enum."""
+    category_map = {
+        'furniture': 'FURNITURE_HOME',
+        'character': 'CHARACTERS_CREATURES',
+        'vehicle': 'CARS_VEHICLES',
+        'building': 'ARCHITECTURE',
+        'nature': 'NATURE_PLANTS',
+        'weapon': 'WEAPONS_MILITARY',
+        'food': 'FOOD_DRINK',
+        'animal': 'ANIMALS_PETS',
+        'tool': 'SCIENCE_TECHNOLOGY',
+        'architecture': 'ARCHITECTURE',
+        'car': 'CARS_VEHICLES',
+        'plant': 'NATURE_PLANTS',
+        'pet': 'ANIMALS_PETS',
+        'electronics': 'ELECTRONICS_GADGETS',
+        'gadget': 'ELECTRONICS_GADGETS',
+        'fashion': 'FASHION_STYLE',
+        'music': 'MUSIC',
+        'sports': 'SPORTS_FITNESS',
+        'people': 'PEOPLE',
+        'culture': 'CULTURAL_HERITAGE_HISTORY',
+        'history': 'CULTURAL_HERITAGE_HISTORY',
+        'travel': 'PLACES_TRAVEL',
+        'art': 'ART_ABSTRACT'
+    }
+    return category_map.get(search_query.lower(), 'ART_ABSTRACT')
+
+def upload_to_backend(file_path, model_data, thumbnail_path=None, category='ART_ABSTRACT'):
+    """Upload the downloaded file and thumbnail to Spring Boot backend."""
     model_name = model_data['name']
     safe_print(f"Uploading {model_name} to backend...")
     
     try:
-        with open(file_path, 'rb') as f:
-            files = {
-                'modelFile': (os.path.basename(file_path), f, 'model/gltf-binary')
-            }
+        files = {}
+        with open(file_path, 'rb') as model_file:
+            files['modelFile'] = (os.path.basename(file_path), model_file.read(), 'model/gltf-binary')
+            
+            # Add thumbnail if available
+            if thumbnail_path and os.path.exists(thumbnail_path):
+                with open(thumbnail_path, 'rb') as thumb_file:
+                    files['thumbnailFile'] = (os.path.basename(thumbnail_path), thumb_file.read(), 'image/jpeg')
+            
             data = {
                 'name': model_name,
                 'type': 'OBJECT',
-                'category': 'ART_ABSTRACT',
+                'category': category,
                 'isAiGenerated': 'false'  # Crawled assets are not AI generated
             }
             
@@ -243,7 +278,7 @@ def process_downloaded_file(file_path, model_uid):
     """If the file is a zip, extract it and find the .glb file. Otherwise return path."""
     if file_path.endswith(".zip"):
         safe_print(f"Extracting ZIP for {model_uid}...")
-        extract_dir = f"temp_downloads/{model_uid}_extracted"
+        extract_dir = f"temp_downloads/models/{model_uid}_extracted"
         os.makedirs(extract_dir, exist_ok=True)
         
         with zipfile.ZipFile(file_path, 'r') as zip_ref:
@@ -259,39 +294,113 @@ def process_downloaded_file(file_path, model_uid):
         return None
     return file_path
 
-def process_model(model):
-    """Workflow for processing a single model: check archive, download, and upload."""
+def process_model(model, search_category='art'):
+    """Workflow for processing a single model: check if exists locally, then upload."""
     uid = model['uid']
     name = model['name']
+    category = get_category_for_search(search_category)
     
     safe_print(f"Processing: {name} ({uid})")
     
-    # Check local archive first (fast, no download needed)
+    # Check local archive first (fast, no upload needed)
     if uid in ARCHIVED_SOURCES:
-        safe_print(f"[Skip] Already crawled (found in archive): {uid}")
+        safe_print(f"[Skip] Already uploaded (found in archive): {uid}")
         return False
     
-    # Download thumbnail
-    thumbnail_path = download_thumbnail(model)
+    # Check if model file exists locally
+    models_dir = "temp_downloads/models"
+    glb_file = f"{models_dir}/{uid}.glb"
+    zip_file = f"{models_dir}/{uid}.zip"
     
-    # Download and process model
-    saved_path = download_model(model)
-    if not saved_path:
-        return False
+    model_file_path = None
+    if os.path.exists(glb_file) and is_valid_glb(glb_file):
+        model_file_path = glb_file
+        safe_print(f"[Found] Local GLB file: {glb_file}")
+    elif os.path.exists(zip_file):
+        # Process ZIP file to extract GLB
+        final_glb = process_downloaded_file(zip_file, uid)
+        if final_glb and os.path.exists(final_glb):
+            model_file_path = final_glb
+            safe_print(f"[Found] Extracted GLB from ZIP: {final_glb}")
+    else:
+        # Model not found locally, download it
+        safe_print(f"[Download] Model not found locally, downloading for {uid}...")
+        saved_path = download_model(model)
+        if not saved_path:
+            safe_print(f"[Error] Failed to download model for {uid}")
+            return False
+        
+        final_glb = process_downloaded_file(saved_path, uid)
+        if not final_glb or not os.path.exists(final_glb):
+            safe_print(f"[Error] Failed to process downloaded model for {uid}")
+            return False
+        
+        model_file_path = final_glb
+        safe_print(f"[Downloaded] Successfully downloaded and processed: {model_file_path}")
     
-    final_glb_path = process_downloaded_file(saved_path, uid)
-    if not final_glb_path:
-        return False
+    # Check for thumbnail
+    thumbnail_path = f"temp_downloads/thumbnails/{uid}.jpeg"
+    if not os.path.exists(thumbnail_path):
+        safe_print(f"[Warning] Thumbnail not found, downloading...")
+        thumbnail_path = download_thumbnail(model)
+    else:
+        safe_print(f"[Found] Local thumbnail: {thumbnail_path}")
     
-    # Upload to backend (backend will calculate hash and check duplicates)
-    success = upload_to_backend(final_glb_path, model)
+    # Upload to backend with both model and thumbnail
+    success = upload_to_backend(model_file_path, model, thumbnail_path, category)
     
     if success:
-        # Save to archive so we don't crawl this again
+        # Save to archive so we don't upload this again
         save_to_archive(uid)
         safe_print(f"[Archived] {uid}")
     
     return success
+
+def get_model_info_from_sketchfab(uid):
+    """Fetch model information from Sketchfab API by UID."""
+    url = f"https://api.sketchfab.com/v3/models/{uid}"
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        safe_print(f"[Error] Failed to fetch model info for {uid}: {e}")
+        return None
+
+def download_thumbnails_for_existing_models():
+    """Download thumbnails for all existing model files in temp_downloads/models/."""
+    models_dir = "temp_downloads/models"
+    
+    if not os.path.exists(models_dir):
+        safe_print(f"[Error] Models directory not found: {models_dir}")
+        return
+    
+    # Get all GLB and ZIP files
+    model_files = []
+    for file in os.listdir(models_dir):
+        if file.endswith('.glb') or file.endswith('.zip'):
+            # Extract UID from filename (remove extension)
+            uid = os.path.splitext(file)[0]
+            # Skip extracted directories
+            if not uid.endswith('_extracted'):
+                model_files.append(uid)
+    
+    safe_print(f"Found {len(model_files)} existing model files")
+    safe_print(f"Starting thumbnail download with 5 workers...\n")
+    
+    def download_thumbnail_for_uid(uid):
+        safe_print(f"Processing UID: {uid}")
+        model_info = get_model_info_from_sketchfab(uid)
+        if model_info:
+            download_thumbnail(model_info)
+        return uid
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        list(executor.map(download_thumbnail_for_uid, model_files))
+    
+    safe_print("\n" + "="*60)
+    safe_print(f"Thumbnail download complete for {len(model_files)} models")
+    safe_print("="*60)
 
 if __name__ == "__main__":
     if not SKETCHFAB_API_TOKEN:
@@ -304,7 +413,7 @@ if __name__ == "__main__":
         ]
         
         all_models = []
-        safe_print(f"Crawling {len(CATEGORIES)} categories with 10 popular models each...")
+        safe_print(f"Searching {len(CATEGORIES)} categories with 10 popular models each...")
         
         for category in CATEGORIES:
             safe_print(f"\n{'='*60}")
@@ -312,19 +421,24 @@ if __name__ == "__main__":
             try:
                 results = search_sketchfab(category, count=10, sort_by='likeCount')
                 safe_print(f"Found {len(results)} models in '{category}'")
+                # Store category with each model for later mapping
+                for result in results:
+                    result['_search_category'] = category
                 all_models.extend(results)
             except Exception as e:
                 safe_print(f"[Error] Failed to search '{category}': {e}")
         
         safe_print(f"\n{'='*60}")
-        safe_print(f"Total models to process: {len(all_models)}")
+        safe_print(f"Total models found: {len(all_models)}")
+        safe_print(f"Checking local models and uploading to backend...")
         safe_print(f"Starting parallel processing with 5 workers...")
         safe_print(f"{'='*60}\n")
         
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-            # Map the processing function to all models
-            list(executor.map(process_model, all_models))
+            # Map the processing function to all models with their search category
+            results = list(executor.map(lambda m: process_model(m, m.get('_search_category', 'art')), all_models))
         
-        safe_print("\n" + "="*60)
-        safe_print("Pipeline execution complete.")
-        safe_print("="*60)
+        uploaded_count = sum(1 for r in results if r)
+        safe_print(f"\n{'='*60}")
+        safe_print(f"Upload complete: {uploaded_count}/{len(all_models)} models uploaded")
+        safe_print(f"{'='*60}")

@@ -31,7 +31,7 @@ public class PartService {
 
     @Transactional(readOnly = true)
     public List<PartResponseDTO> getParts(PartType type, PartCategory category, String sortBy, String timeRange,
-            Boolean isAiGenerated) {
+            Boolean isAiGenerated, int count) {
         Specification<Part> spec = Specification.where(PartSpecification.hasType(type))
                 .and(PartSpecification.isPublic());
 
@@ -50,8 +50,16 @@ public class PartService {
 
         Sort sort = calculateSort(sortBy);
         return partRepository.findAll(spec, sort).stream()
+                .limit(count)
                 .map(part -> PartResponseDTO.from(part, s3Service))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public PartResponseDTO getPartById(Long partId) {
+        Part part = partRepository.findById(partId)
+                .orElseThrow(() -> new RuntimeException("Part not found: " + partId));
+        return PartResponseDTO.from(part, s3Service);
     }
 
     private Sort calculateSort(String sortBy) {

@@ -27,8 +27,17 @@ public class PartController {
             @RequestParam(required = false) com.motioncad.server.domain.PartCategory category,
             @RequestParam(defaultValue = "latest") String sort,
             @RequestParam(required = false) String timeRange,
-            @RequestParam(required = false) Boolean isAiGenerated) {
-        return partService.getParts(type, category, sort, timeRange, isAiGenerated);
+            @RequestParam(required = false) Boolean isAiGenerated,
+            @RequestParam(defaultValue = "20") Integer count) {
+        // Validate count parameter: maximum 50
+        int validatedCount = Math.min(count != null ? count : 20, 50);
+        return partService.getParts(type, category, sort, timeRange, isAiGenerated, validatedCount);
+    }
+
+    @GetMapping("/{partId}")
+    @Operation(summary = "Get Part by ID", description = "Fetches a single part by its ID.")
+    public com.motioncad.server.dto.PartResponseDTO getPart(@PathVariable Long partId) {
+        return partService.getPartById(partId);
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

@@ -36,10 +36,10 @@ public class TransferController {
     @Operation(summary = "Download GLB File", description = "Redirects to the presigned S3 URL for downloading the GLB file by fileId.")
     public ResponseEntity<Void> downloadGlbFile(@PathVariable String fileId) {
         return transferService.getFileDownloadUrl(fileId)
-                .map(url -> ResponseEntity.status(HttpStatus.FOUND)
+                .<ResponseEntity<Void>>map(url -> ResponseEntity.status(HttpStatus.FOUND)
                         .location(URI.create(url))
                         .build())
-                .orElse(ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/latest")

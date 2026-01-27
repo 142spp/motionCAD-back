@@ -3,6 +3,7 @@ package com.motioncad.server.controller;
 import com.motioncad.server.domain.User;
 import com.motioncad.server.domain.UserSettings;
 import com.motioncad.server.dto.UserResponseDTO;
+import com.motioncad.server.dto.UserUpdateRequestDTO;
 import com.motioncad.server.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,5 +29,11 @@ public class UserController {
     @Operation(summary = "Update User Settings", description = "Updates JSON-based user settings (hand sensitivity, camera, etc.)")
     public void updateUserSettings(@PathVariable Long userId, @RequestBody UserSettings settings) {
         userService.updateUserSettings(userId, settings);
+    }
+
+    @PatchMapping("/{userId}")
+    @Operation(summary = "Update User Profile", description = "Updates user profile information (nickname, region, job, description)")
+    public void updateProfile(@PathVariable Long userId, @RequestBody UserUpdateRequestDTO updateDto) {
+        userService.updateUserProfile(userId, updateDto);
     }
 }

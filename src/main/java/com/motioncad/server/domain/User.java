@@ -42,6 +42,27 @@ public class User extends BaseTimeEntity {
     @Column(name = "user_settings", columnDefinition = "jsonb")
     private UserSettings userSettings;
 
+    @Column(nullable = false, columnDefinition = "integer default 0")
+    @Builder.Default
+    private Integer totalProjects = 0;
+
+    @Column(nullable = false, columnDefinition = "integer default 0")
+    @Builder.Default
+    private Integer totalLikes = 0;
+
+    @Column(nullable = false, columnDefinition = "integer default 0")
+    @Builder.Default
+    private Integer totalViews = 0;
+
+    @Column
+    private String region;
+
+    @Column
+    private String job;
+
+    @Column(columnDefinition = "TEXT")
+    private String userDescription;
+
     @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Project> projects = new ArrayList<>();

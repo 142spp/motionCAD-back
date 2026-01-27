@@ -26,11 +26,17 @@ public class User extends BaseTimeEntity {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(nullable = false)
+    @Column
     private String passwordHash;
 
     @Column(nullable = false)
     private String nickname;
+
+    @Column
+    private String provider; // LOCAL, GOOGLE, etc.
+
+    @Column
+    private String providerId; // OAuth2 provider's unique user ID
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "user_settings", columnDefinition = "jsonb")

@@ -3,6 +3,7 @@ package com.motioncad.server.service;
 import com.motioncad.server.domain.Part;
 import com.motioncad.server.domain.PartCategory;
 import com.motioncad.server.domain.PartType;
+import com.motioncad.server.domain.UploadStatus;
 import com.motioncad.server.domain.User;
 import com.motioncad.server.dto.PartResponseDTO;
 import com.motioncad.server.repository.PartRepository;
@@ -18,7 +19,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PartService {
@@ -26,6 +29,7 @@ public class PartService {
     private final PartRepository partRepository;
     private final UserRepository userRepository;
     private final S3Service s3Service;
+    private final PartAsyncService partAsyncService;
 
     @Transactional(readOnly = true)
     public List<PartResponseDTO> getParts(PartType type, PartCategory category, String sortBy, String timeRange,
@@ -76,41 +80,59 @@ public class PartService {
     public Long uploadUserPart(Long userId, String name, PartType type, PartCategory category,
             MultipartFile modelFile, MultipartFile thumbnailFile, Boolean isAiGenerated)
             throws java.io.IOException {
+        long startTime = System.currentTimeMillis();
+        log.info("[Performance] Starting uploadUserPart for name: {}, size: {} bytes", name, modelFile.getSize());
+
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
-        // Calculate file hash for deduplication
+        // Calculate file hash
+        long hashStartTime = System.currentTimeMillis();
         String fileHash = s3Service.calculateFileHash(modelFile);
+        log.info("[Performance] Hash calculation took {} ms", System.currentTimeMillis() - hashStartTime);
 
-        // Check if this file already exists
+        // Check duplicates
         if (partRepository.existsByFileHash(fileHash)) {
+            log.info("[Performance] Duplicate found by hash, returning existing part. Total time: {} ms",
+                    System.currentTimeMillis() - startTime);
             Part existingPart = partRepository.findByFileHash(fileHash)
                     .orElseThrow(() -> new RuntimeException("Hash exists but part not found"));
-            return existingPart.getId(); // Return existing part ID instead of uploading again
+            return existingPart.getId();
         }
 
-        // Upload model file to S3
-        String modelS3Key = s3Service.uploadFile(modelFile, "models");
+        // Read bytes
+        long byteReadStartTime = System.currentTimeMillis();
+        byte[] modelBytes = modelFile.getBytes();
+        byte[] thumbnailBytes = (thumbnailFile != null && !thumbnailFile.isEmpty()) ? thumbnailFile.getBytes() : null;
+        log.info("[Performance] Reading bytes into memory took {} ms", System.currentTimeMillis() - byteReadStartTime);
 
-        // Upload thumbnail file to S3 if provided
-        String thumbnailS3Key = null;
-        if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
-            thumbnailS3Key = s3Service.uploadFile(thumbnailFile, "thumbnails");
-        }
-
+        // Save Part
+        long dbSaveStartTime = System.currentTimeMillis();
         Part part = Part.builder()
                 .name(name)
                 .type(type)
                 .category(category)
-                .modelFileUrl(modelS3Key)
-                .thumbnailUrl(thumbnailS3Key)
                 .fileHash(fileHash)
                 .creator(creator)
                 .isPublic(true)
                 .isAiGenerated(isAiGenerated != null ? isAiGenerated : false)
+                .uploadStatus(UploadStatus.PROCESSING)
                 .build();
 
-        return partRepository.save(part).getId();
+        Part savedPart = partRepository.save(part);
+        log.info("[Performance] DB save (pending) took {} ms", System.currentTimeMillis() - dbSaveStartTime);
+
+        // Trigger async
+        partAsyncService.uploadFilesAsync(
+                savedPart.getId(),
+                modelBytes, modelFile.getOriginalFilename(), modelFile.getContentType(),
+                thumbnailBytes,
+                thumbnailFile != null ? thumbnailFile.getOriginalFilename() : null,
+                thumbnailFile != null ? thumbnailFile.getContentType() : null);
+
+        log.info("[Performance] Total synchronous processing took {} ms. Returning partId: {}",
+                System.currentTimeMillis() - startTime, savedPart.getId());
+        return savedPart.getId();
     }
 
     @Transactional

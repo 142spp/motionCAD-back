@@ -56,4 +56,9 @@ public class Part extends BaseTimeEntity {
 
     @Column(name = "is_ai_generated")
     private boolean isAiGenerated;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "upload_status")
+    @Builder.Default
+    private UploadStatus uploadStatus = UploadStatus.PENDING;
 }

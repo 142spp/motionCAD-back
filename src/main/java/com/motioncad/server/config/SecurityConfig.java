@@ -1,7 +1,9 @@
 package com.motioncad.server.config;
 
+import com.motioncad.server.security.CustomOAuth2UserService;
 import com.motioncad.server.security.JwtAuthenticationFilter;
 import com.motioncad.server.security.JwtTokenProvider;
+import com.motioncad.server.security.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -27,6 +29,8 @@ import java.util.List;
 public class SecurityConfig {
 
 	private final JwtTokenProvider tokenProvider;
+	private final CustomOAuth2UserService customOAuth2UserService;
+	private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
 
 	@Value("${app.cors.allowed-origins}")
 	private List<String> allowedOrigins;
@@ -43,6 +47,10 @@ public class SecurityConfig {
 				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+				.oauth2Login(oauth2 -> oauth2
+						.userInfoEndpoint(userInfo -> userInfo
+								.userService(customOAuth2UserService))
+						.successHandler(oAuth2AuthenticationSuccessHandler))
 		// .addFilterBefore(new JwtAuthenticationFilter(tokenProvider),
 		// UsernamePasswordAuthenticationFilter.class)
 		;

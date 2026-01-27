@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MotionCAD OAuth2 Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+        }
+        .container {
+            background-color: #1e1e1e;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        h1 { margin-bottom: 1.5rem; color: #bb86fc; }
+        .btn-google {
+            display: inline-flex;
+            align-items: center;
+            background-color: #ffffff;
+            color: #000000;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: transform 0.2s, background-color 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-google:hover {
+            background-color: #f1f1f1;
+            transform: translateY(-2px);
+        }
+        .token-area {
+            margin-top: 2rem;
+            padding: 1rem;
+            background-color: #2c2c2c;
+            border-radius: 8px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 0.9rem;
+            display: none;
+            text-align: left;
+        }
+        .label {
+            color: #03dac6;
+            margin-bottom: 0.5rem;
+            display: block;
+            font-weight: bold;
+        }
+        .status {
+            margin-top: 1rem;
+            font-style: italic;
+            color: #cf6679;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MotionCAD</h1>
+        <p>Google OAuth2 로그인 테스트</p>
+        
+        <a id="loginBtn" href="http://localhost:8080/oauth2/authorization/google" class="btn-google">
+            <img src="https://developers.google.com/static/identity/images/g-logo.png" alt="G" style="width:20px; margin-right:10px;">
+            Google로 로그인
+        </a>
+
+        <div id="tokenContainer" class="token-area">
+            <span class="label">수신된 JWT 토큰:</span>
+            <div id="tokenValue"></div>
+            <button onclick="copyToken()" style="margin-top: 10px; cursor: pointer;">토큰 복사</button>
+        </div>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        // URL에서 토큰 파라미터 확인
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            const error = urlParams.get('error');
+
+            if (token) {
+                document.getElementById('tokenContainer').style.display = 'block';
+                document.getElementById('tokenValue').innerText = token;
+                document.getElementById('status').innerText = '로그인 성공!';
+                document.getElementById('status').style.color = '#03dac6';
+                document.getElementById('loginBtn').style.display = 'none';
+                
+                // 로컬 스토리지 저장 테스트
+                localStorage.setItem('accessToken', token);
+                console.log('Token saved to localStorage');
+            } else if (error) {
+                document.getElementById('status').innerText = '로그인 실패: ' + error;
+            }
+        };
+
+        function copyToken() {
+            const token = document.getElementById('tokenValue').innerText;
+            navigator.clipboard.writeText(token).then(() => {
+                alert('토큰이 클립보드에 복사되었습니다.');
+            });
+        }
+    </script>
+</body>
+</html>

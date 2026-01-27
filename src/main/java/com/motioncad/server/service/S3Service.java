@@ -29,15 +29,19 @@ public class S3Service {
     private String bucket;
 
     public String uploadFile(MultipartFile file, String directory) throws IOException {
-        String fileName = directory + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+        return uploadFileBytes(file.getBytes(), directory, file.getOriginalFilename(), file.getContentType());
+    }
+
+    public String uploadFileBytes(byte[] bytes, String directory, String originalFileName, String contentType) {
+        String fileName = directory + "/" + UUID.randomUUID() + "_" + originalFileName;
 
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucket)
                 .key(fileName)
-                .contentType(file.getContentType())
+                .contentType(contentType)
                 .build();
 
-        s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+        s3Client.putObject(putObjectRequest, RequestBody.fromBytes(bytes));
 
         // Return the key (path) instead of the full URL
         return fileName;

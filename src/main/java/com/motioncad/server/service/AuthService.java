@@ -28,6 +28,7 @@ public class AuthService {
                 .email(dto.email())
                 .passwordHash(passwordEncoder.encode(dto.password()))
                 .nickname(dto.nickname())
+                .provider("LOCAL")
                 .userSettings(UserSettings.builder()
                         .handSensitivity(50)
                         .isLeftHanded(false)

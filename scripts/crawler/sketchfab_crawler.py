@@ -161,6 +161,56 @@ def download_model(model_data):
 import zipfile
 import shutil
 
+def download_thumbnail(model_data):
+    """Download thumbnail image from Sketchfab."""
+    model_uid = model_data['uid']
+    model_name = model_data['name']
+    
+    # Create thumbnails directory
+    thumbnails_dir = "temp_downloads/thumbnails"
+    os.makedirs(thumbnails_dir, exist_ok=True)
+    
+    thumbnail_path = f"{thumbnails_dir}/{model_uid}.jpeg"
+    
+    # Check if thumbnail already exists
+    if os.path.exists(thumbnail_path) and os.path.getsize(thumbnail_path) > 0:
+        safe_print(f"[Reuse] Thumbnail exists: {thumbnail_path}")
+        return thumbnail_path
+    
+    # Get thumbnail URL from model data
+    # Sketchfab API provides thumbnails in different sizes
+    thumbnails = model_data.get('thumbnails', {})
+    thumbnail_url = None
+    
+    # Try to get the largest available thumbnail
+    for size in ['images', 'large', 'medium', 'small']:
+        if size in thumbnails and thumbnails[size]:
+            if isinstance(thumbnails[size], list) and len(thumbnails[size]) > 0:
+                thumbnail_url = thumbnails[size][0].get('url')
+            elif isinstance(thumbnails[size], dict):
+                thumbnail_url = thumbnails[size].get('url')
+            if thumbnail_url:
+                break
+    
+    if not thumbnail_url:
+        safe_print(f"[Warning] No thumbnail URL found for {model_name}")
+        return None
+    
+    try:
+        safe_print(f"Downloading thumbnail for {model_name}...")
+        response = requests.get(thumbnail_url, timeout=30)
+        response.raise_for_status()
+        
+        with open(thumbnail_path, 'wb') as f:
+            f.write(response.content)
+        
+        safe_print(f"[Success] Saved thumbnail: {thumbnail_path}")
+        return thumbnail_path
+    
+    except Exception as e:
+        safe_print(f"[Error] Thumbnail download failed for {model_name}: {e}")
+        return None
+
 def upload_to_backend(file_path, model_data):
     """Upload the downloaded file to Spring Boot backend."""
     model_name = model_data['name']
@@ -221,7 +271,10 @@ def process_model(model):
         safe_print(f"[Skip] Already crawled (found in archive): {uid}")
         return False
     
-    # Download and process
+    # Download thumbnail
+    thumbnail_path = download_thumbnail(model)
+    
+    # Download and process model
     saved_path = download_model(model)
     if not saved_path:
         return False

@@ -19,9 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PartService {
@@ -80,34 +78,24 @@ public class PartService {
     public Long uploadUserPart(Long userId, String name, PartType type, PartCategory category,
             MultipartFile modelFile, MultipartFile thumbnailFile, Boolean isAiGenerated)
             throws java.io.IOException {
-        long startTime = System.currentTimeMillis();
-        log.info("[Performance] Starting uploadUserPart for name: {}, size: {} bytes", name, modelFile.getSize());
-
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
-        // Calculate file hash
-        long hashStartTime = System.currentTimeMillis();
+        // Calculate file hash for deduplication
         String fileHash = s3Service.calculateFileHash(modelFile);
-        log.info("[Performance] Hash calculation took {} ms", System.currentTimeMillis() - hashStartTime);
 
-        // Check duplicates
+        // Check if this file already exists
         if (partRepository.existsByFileHash(fileHash)) {
-            log.info("[Performance] Duplicate found by hash, returning existing part. Total time: {} ms",
-                    System.currentTimeMillis() - startTime);
             Part existingPart = partRepository.findByFileHash(fileHash)
                     .orElseThrow(() -> new RuntimeException("Hash exists but part not found"));
             return existingPart.getId();
         }
 
-        // Read bytes
-        long byteReadStartTime = System.currentTimeMillis();
+        // Prepare bytes for async upload before the request ends
         byte[] modelBytes = modelFile.getBytes();
         byte[] thumbnailBytes = (thumbnailFile != null && !thumbnailFile.isEmpty()) ? thumbnailFile.getBytes() : null;
-        log.info("[Performance] Reading bytes into memory took {} ms", System.currentTimeMillis() - byteReadStartTime);
 
-        // Save Part
-        long dbSaveStartTime = System.currentTimeMillis();
+        // Save Part with PROCESSING status and no URLs yet
         Part part = Part.builder()
                 .name(name)
                 .type(type)
@@ -120,9 +108,8 @@ public class PartService {
                 .build();
 
         Part savedPart = partRepository.save(part);
-        log.info("[Performance] DB save (pending) took {} ms", System.currentTimeMillis() - dbSaveStartTime);
 
-        // Trigger async
+        // Trigger async upload
         partAsyncService.uploadFilesAsync(
                 savedPart.getId(),
                 modelBytes, modelFile.getOriginalFilename(), modelFile.getContentType(),
@@ -130,8 +117,6 @@ public class PartService {
                 thumbnailFile != null ? thumbnailFile.getOriginalFilename() : null,
                 thumbnailFile != null ? thumbnailFile.getContentType() : null);
 
-        log.info("[Performance] Total synchronous processing took {} ms. Returning partId: {}",
-                System.currentTimeMillis() - startTime, savedPart.getId());
         return savedPart.getId();
     }
 

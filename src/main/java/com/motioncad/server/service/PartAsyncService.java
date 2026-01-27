@@ -26,31 +26,24 @@ public class PartAsyncService {
                 .orElseThrow(() -> new RuntimeException("Part not found: " + partId));
 
         try {
-            long startTime = System.currentTimeMillis();
-            log.info("[Performance][Async] Starting async upload for part ID: {}", partId);
+            log.info("Starting async upload for part ID: {}", partId);
             part.setUploadStatus(UploadStatus.PROCESSING);
             partRepository.save(part);
 
             // Upload model file
-            long modelS3StartTime = System.currentTimeMillis();
             String modelS3Key = s3Service.uploadFileBytes(modelData, "models", modelFileName, modelContentType);
-            log.info("[Performance][Async] Model S3 upload took {} ms", System.currentTimeMillis() - modelS3StartTime);
             part.setModelFileUrl(modelS3Key);
 
             // Upload thumbnail file if provided
             if (thumbnailData != null) {
-                long thumbS3StartTime = System.currentTimeMillis();
                 String thumbnailS3Key = s3Service.uploadFileBytes(thumbnailData, "thumbnails", thumbnailFileName,
                         thumbnailContentType);
-                log.info("[Performance][Async] Thumbnail S3 upload took {} ms",
-                        System.currentTimeMillis() - thumbS3StartTime);
                 part.setThumbnailUrl(thumbnailS3Key);
             }
 
             part.setUploadStatus(UploadStatus.SUCCESS);
             partRepository.save(part);
-            log.info("[Performance][Async] Total async processing took {} ms for part ID: {}",
-                    System.currentTimeMillis() - startTime, partId);
+            log.info("Successfully completed async upload for part ID: {}", partId);
 
         } catch (Exception e) {
             log.error("Failed to upload files for part ID: {}", partId, e);

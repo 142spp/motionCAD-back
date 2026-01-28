@@ -1,6 +1,10 @@
 server:
   port: ${SERVER_PORT:8080}
   forward-headers-strategy: framework
+  tomcat:
+    remote-ip-header: x-forwarded-for
+    protocol-header: x-forwarded-proto
+    internal-proxies: ".*"
 
 app:
   cors:
@@ -21,7 +25,7 @@ spring:
             scope:
               - email
               - profile
-            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            redirect-uri: "${GOOGLE_REDIRECT_URI:{baseUrl}/login/oauth2/code/{registrationId}}"
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/motioncad}
     username: ${SPRING_DATASOURCE_USERNAME:user}

@@ -50,9 +50,8 @@ public class SecurityConfig {
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/api/auth/**", "/oauth2/**", "/login/**").permitAll()
-						.requestMatchers(org.springframework.http.HttpMethod.GET, "/api/parts/**").permitAll()
-						.requestMatchers(org.springframework.http.HttpMethod.GET, "/api/transfer/download/**")
-						.permitAll()
+						.requestMatchers(org.springframework.http.HttpMethod.GET, "/api/parts/**", "/models/**", "/thumbnails/**").permitAll()
+						.requestMatchers(org.springframework.http.HttpMethod.GET, "/api/transfer/download/**").permitAll()
 						.requestMatchers("/api/parts/**", "/api/transfer/**", "/api/users/**").authenticated()
 						.anyRequest().permitAll())
 				.oauth2Login(oauth2 -> oauth2

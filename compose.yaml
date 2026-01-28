@@ -8,6 +8,16 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/motioncad
       - SPRING_DATASOURCE_USERNAME=user
       - SPRING_DATASOURCE_PASSWORD=password
+      - SERVER_PORT=${SERVER_PORT:-8080}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173}
+      - OAUTH2_REDIRECT_URI=${OAUTH2_REDIRECT_URI:-http://localhost:5173/oauth2/redirect}
+      - AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
+      - AWS_SECRET_KEY=${AWS_SECRET_KEY}
+      - AWS_REGION=${AWS_REGION:-ap-northeast-2}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - SKETCHFAB_API_TOKEN=${SKETCHFAB_API_TOKEN}
     depends_on:
       - db
     healthcheck:
